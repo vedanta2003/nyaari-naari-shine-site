@@ -4,9 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export const RegisterSection = () => {
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     businessName: '',
@@ -22,7 +24,7 @@ export const RegisterSection = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Basic validation
@@ -35,20 +37,71 @@ export const RegisterSection = () => {
       return;
     }
 
-    // Success message
-    toast({
-      title: "Registration Successful! 🎉",
-      description: "Welcome to Nyaari Naari Season 3! We'll be in touch soon with event details.",
-    });
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    // Reset form
-    setFormData({
-      fullName: '',
-      businessName: '',
-      email: '',
-      whatsapp: '',
-      city: ''
-    });
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('registrations')
+        .insert({
+          full_name: formData.fullName,
+          business_name: formData.businessName || null,
+          email: formData.email,
+          whatsapp: formData.whatsapp,
+          city: formData.city || null
+        });
+
+      if (error) {
+        if (error.code === '23505') { // Unique constraint violation
+          toast({
+            title: "Email Already Registered",
+            description: "This email is already registered for the event.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Registration Failed",
+            description: "Something went wrong. Please try again.",
+            variant: "destructive"
+          });
+        }
+        return;
+      }
+
+      // Success message
+      toast({
+        title: "Registration Successful! 🎉",
+        description: "Welcome to Nyaari Naari Season 3! We'll be in touch soon with event details.",
+      });
+
+      // Reset form
+      setFormData({
+        fullName: '',
+        businessName: '',
+        email: '',
+        whatsapp: '',
+        city: ''
+      });
+
+    } catch (error) {
+      toast({
+        title: "Registration Failed",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -149,8 +202,9 @@ export const RegisterSection = () => {
                 variant="cta" 
                 size="xl" 
                 className="w-full mt-8"
+                disabled={isLoading}
               >
-                Count Me In! 🚀
+                {isLoading ? "Registering..." : "Count Me In! 🚀"}
               </Button>
             </form>
           </Card>

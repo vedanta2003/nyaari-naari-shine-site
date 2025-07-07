@@ -6,6 +6,7 @@ import { TestimonialsSection } from "@/components/TestimonialsSection";
 import { RegisterSection } from "@/components/RegisterSection";
 import { FAQSection } from "@/components/FAQSection";
 import { Footer } from "@/components/Footer";
+import { StickyRegisterButton } from "@/components/StickyRegisterButton";
 
 const Index = () => {
   return (
@@ -18,6 +19,7 @@ const Index = () => {
       <RegisterSection />
       <FAQSection />
       <Footer />
+      <StickyRegisterButton />
     </div>
   );
 };
